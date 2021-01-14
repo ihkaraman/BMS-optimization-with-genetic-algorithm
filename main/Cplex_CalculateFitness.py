@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[8]:
+# In[18]:
 
 
 # Import Libraries
@@ -10,9 +10,10 @@ import math
 import numpy as np
 import pandas as pd
 import random
+import time 
 
 
-# In[9]:
+# In[19]:
 
 
 # Parameter sets are partitioned in this script.
@@ -37,7 +38,7 @@ class OptionalParameters(object):
         self.degradation_complex = 0
 
 
-# In[10]:
+# In[20]:
 
 
 # Real Time Parameters
@@ -82,7 +83,7 @@ class RealTimeParameters(object):
             self.initial_load = 0
 
 
-# In[11]:
+# In[21]:
 
 
 # Technical Parameters
@@ -108,11 +109,12 @@ class ModelParameters(object):
         self.z_value = 2.58  # for probability 0.99
 
 
-# In[13]:
+# In[22]:
 
 
 # Objective function value of the determined l-sequence. 
 def calculate_fitness(l_array):
+    
     
     l_array = l_array.astype('float64')
     
@@ -314,16 +316,15 @@ def calculate_fitness(l_array):
     model.solve()
 
     solution = model.solution.get_objective_value()/1000000    
-    
     return solution
 
 
-# In[14]:
+# In[6]:
 
 
 # Stochastic Mixed Integer Programming Model
 def calculate_objective_function(initial_size):
-
+    time_start = time.time()
     model = cplex.Cplex()
     options_p = OptionalParameters()
     real_p = RealTimeParameters()
@@ -544,22 +545,29 @@ def calculate_objective_function(initial_size):
             solution_pool = np.vstack((solution_pool, soln_list))
     print(solution_pool)
     '''
-    
+    print("calculate obj function " + str(time.time()-time_start))
     return solution/1000000
 
 
-# In[34]:
+# In[27]:
 
 
-def generate_random_array(pop_size):
+data_consumption= pd.read_csv("miris_load_hour.csv")
+data_generation_solar = pd.read_csv("miris_PV_Hour.csv")
+
+
+# In[28]:
+
+
+def generate_random_array(time_horizon):
     
-    max_consumption = max(RealTimeParameters().consumption)
-    max_generation_solar = max(RealTimeParameters().generation_solar)
+    max_consumption = data_consumption["Rounded"].max()
+    max_generation_solar = data_generation_solar["Rounded"].max()
     
-    l_upper_limit = max(max_consumption, max_generation_solar)
-    l_lower_limit = 0 
+    upper_limit = max(max_consumption, max_generation_solar)
+    lower_limit = 0 
     
-    random_array = np.random.randint(l_lower_limit, l_upper_limit, size = (pop_size, OptionalParameters().time_horizon))
+    random_array = np.random.randint(lower_limit, upper_limit,  size = time_horizon)
     
     return random_array
 
